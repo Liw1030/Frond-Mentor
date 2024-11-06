@@ -1,47 +1,76 @@
 <script>
-    import { writable } from 'svelte/store';
+  import { writable, derived } from 'svelte/store';
 
-    let filter = 'all';
-    let items = writable(['Task1', 'Task2', 'Task3', 'Task4']);
-    let newItem = '';
-  
-    function addItem() {
-      if (newItem.trim()) {
-        items.update(currentItems => [...currentItems, newItem]);
-        newItem = '';
-      }
+
+  // Inicializamos una lista vacía de tareas
+  let items = writable([]);
+
+  // Variable para agregar una nueva tarea
+  let newItem = '';
+
+  //Agregar li
+  function addItem() {
+    if (newItem.trim()) {
+      items.update(currentItems => [...currentItems, newItem]);
+      newItem = '';
     }
-  
-    function deleteItem(index) {
-      items.update(currentItems => currentItems.filter((_, i) => i !== index));
+  };
+
+  function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+      addItem();
     }
+  };
   
-    function handleKeyPress(event) {
-      if (event.key === 'Enter') {
-        addItem();
-      }
+  //Eliminar li
+  function deleteItem(index) {
+    items.update(currentItems => currentItems.filter((_, i) => i !== index));
+  };
+
+  // Sección 2 - Calificación
+  let rating = null;
+  
+  function selectRating(value) {
+    rating = value;
+  };
+  
+  function submit() {
+    if (rating !== null) {
+      console.log(`Calificación enviada: ${rating}`);
+    } else {
+      alert('Por favor selecciona una calificación.');
     }
-  
-    // Sección 2 - Calificación
-    let rating = null;
-  
-    function selectRating(value) {
-      rating = value;
+  };
+
+
+  //Cambiar clase del body al cambiar el estado del tema
+  const isDarkMode = writable(false);
+
+  $: {
+    if ($isDarkMode) {
+      document.body.classList.add('dark');
+      document.body.classList.remove('light');
+    } else {
+      document.body.classList.add('light');
+      document.body.classList.remove('dark');
     }
+  };
+
+
+  // Filtros de tareas
+  let filter = "all"; // Filtro de tareas por estado (all, active, completed)
+
+  $: taskCount = $items.length;
   
-    function submit() {
-      if (rating !== null) {
-        console.log(`Calificación enviada: ${rating}`);
-      } else {
-        alert('Por favor selecciona una calificación.');
-      }
-    }
+
+
   </script>
   
   <header>
     <h1>Todo</h1>
-    <div class="theme-black">
-      <button class="checkbox" on:click={() => theme.update(t => t === 'dark' ? 'light' : 'dark')}>Bt</button>
+    <div class="theme-block">
+      <input type="checkbox" id="theme" bind:checked={$isDarkMode}>
+      <label for="theme"></label>
     </div>
   </header>
   
@@ -54,7 +83,8 @@
     <ul>
       {#each $items as item, index}
         <li>
-          <span class="bt"></span>
+          <input type="checkbox" name="todoItem" class="checkbox" id="item-{index}">
+          <label for="item-{index}" class="checkmark"></label>
           <p class="text">{item}</p>
           <button class="remove" on:click={() => deleteItem(index)}>Click</button>
         </li>
@@ -62,28 +92,33 @@
     </ul>
 
     <div class="bottom-items">
-        <div class="item-left"><span>2</span> task</div>
-      
-        <div class="filter flex-row">
-          <label>
-            <input type="radio" name="filter" id="all" bind:group={filter} value="all">
-            <span>All</span>
-          </label>
-          <label>
-            <input type="radio" name="filter" id="active" bind:group={filter} value="active">
-            <span>Active</span>
-          </label>
-          <label>
-            <input type="radio" name="filter" id="completed" bind:group={filter} value="completed">
-            <span>Completed</span>
-          </label>
-        </div>
-      
-        <span class="clear">Clear completed</span>
+      <!-- Contador de tareas filtradas -->
+      <div class="item-left">
+        <span>{taskCount}</span> task{taskCount !== 1 ? 's' : ''}
       </div>
+  
+      <!-- Filtros -->
+      <div class="filter flex-row">
+        <label>
+          <input type="radio" name="filter" id="all" value="all" bind:group={filter}>
+          <span>All</span>
+        </label>
+        <label>
+          <input type="radio" name="filter" id="active" value="active" bind:group={filter}>
+          <span>Active</span>
+        </label>
+        <label>
+          <input type="radio" name="filter" id="completed" value="completed" bind:group={filter}>
+          <span>Completed</span>
+        </label>
+      </div>
+
+      <span>Clear completed</span>
+    </div>
+
   </section>
   
-  <section class="content-2">
+  <section class="content-2 ligth">
     <div class="container">
       <div class="head">
         <img src="../src/public/images/icon-star.svg" class="icon" alt="Star Icon">
@@ -106,10 +141,10 @@
           </button>
         {/each}
       </div>
-  
+      
       <button class="sub" on:click={submit}>Submit</button>
     </div>
-  </section>
+</section>
   
   
   <footer>
@@ -137,23 +172,76 @@
       --Very-Dark-Blue: hsl(216, 12%, 8%);
 }
 
+:global(body) {
+    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: var(--main-bg);
+    color: var(--font-color);
+}
+
+:global(.light) {
+    background-color: var(--main-bg-lg);
+    color: var(--font-color-lg);
+
+    main{
+      background: var(--todo-bg-lg);
+      color: var(--font-color-lg);
+      input{
+        background: transparent;
+        color: var(--font-color-lg);
+      }
+    }
+
+    section.section1{
+      background: var(--todo-bg-lg);
+      border: 1px solid var(--Light-Grey);
+      li{
+        color: var(--font-color-lg);
+      }
+    }
+
+    section.content-2{
+      background: var(--todo-bg-lg);
+      border: 1px solid var(--Light-Grey);
+      h2{
+        color: rgba(0, 0, 0, 0.884);
+      }
+    }
+}
+
+
+
 header{
         display: flex;
         width: 100%;
         max-width: 545px;
         align-items: center;
         justify-content: space-between;
+
+        h1{
+          color: #FFF;
+        }
 }
 
-button.checkbox{
-        background: url('../public/images/icon-moon.svg');
-        width: 20px;
-        height: 20px;
-        color: transparent;
-        border: none;
-        background-size: cover;
+.theme-block{
+  margin: -10px 0 0;
 }
 
+.theme-block #theme{
+  display: none;
+}
+
+.theme-block #theme + label::before{
+  content: "";
+  background: url('../public/images/icon-moon.svg');
+  display: block;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.theme-block #theme:checked + label::before{
+  background: url('../public/images/icon-sun.svg');
+}
 
 main {
       display: flex;
@@ -165,9 +253,11 @@ main {
 }
   
 input {
-      background: none;
-      border: transparent;
+      background: var(--todo-bg);
+      border: none;
       padding: 0 10px;
+      color: var(--font-color);
+      outline: none;
 }
   
 .add_button {
@@ -191,19 +281,6 @@ ul {
       margin: 0;
 }
   
-span.bt {
-      border: 1px solid var(--font-color);
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      margin: 0 20px;
-      cursor: pointer;
-}
-  
-span.bt:hover {
-      background: center url('../public/images/icon-check.svg') no-repeat,
-        linear-gradient(135deg, hsl(192, 100%, 67%), hsl(200, 87%, 65%));
-}
   
 li {
       display: flex;
@@ -239,7 +316,50 @@ section.section1 {
       margin-top: 20px;
       border-radius: 5px;
 }
-  
+
+.checkmark {
+  top: -5px;
+  left: 0;
+  height: 20px;
+  width: 20px;
+  margin: 0 15px 0 20px;
+  position: relative;
+}
+
+input.checkbox {
+  display: none;
+}
+
+ul li input[type="checkbox"] + .checkmark { /* Cambié ~ por + para seleccionar el hermano directo */
+  border: 1px solid var(--font-color);
+  border-radius: 50%;
+}
+
+ul li input[type="checkbox"] + .checkmark:hover {
+  border: 0;
+  padding: 1px;
+  background: center url('../public/images/icon-check.svg') no-repeat,
+        linear-gradient(135deg, hsl(192, 100%, 67%), hsl(200, 87%, 65%));
+}
+
+ul li input[type="checkbox"] + .checkmark:hover::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: block;
+}
+
+ul li input[type="checkbox"]:checked + .checkmark {
+  background: center url('../public/images/icon-check.svg') no-repeat,
+        linear-gradient(135deg, hsl(192, 100%, 67%), hsl(200, 87%, 65%));
+}
+
+ul li input[type="checkbox"]:checked ~ .text {
+  text-decoration: line-through;
+}
+
+
 button.number.selected {
       background-color: var(--Orange);
       color: white;
@@ -250,9 +370,9 @@ button.number.selected {
       max-width: 545px;
       background: var(--todo-bg);
       border-radius: 5px;
-      box-shadow: 0 42px 30px -9px var(--todo-shadow);
       margin: 10% auto;
       padding: 20px;
+      border-radius: 10px;
 }
   
 .container {
@@ -329,13 +449,14 @@ button.sub:hover {
 }
   
 footer {
-      background: var(--Very-Dark-Blue);
+      background: rgba(0, 0, 0, 0.5);
       font-size: 6px;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 10px 0;
       height: 50px;
+      width: 100%;
 }
 
 div.bottom-items{
@@ -344,5 +465,5 @@ div.bottom-items{
     justify-content: space-around;
 }
 
-  </style>
+</style>
   
