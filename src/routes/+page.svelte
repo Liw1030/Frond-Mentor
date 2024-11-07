@@ -9,7 +9,6 @@
   let newItem = '';
 
   //Agregar li
-   // Función para agregar una nueva tarea
    function addItem() {
     if (newItem.trim()) {
       items.update(currentItems => [
@@ -86,7 +85,7 @@
 
 
   // Filtros de tareas
-  let filter = "all"; // Filtro de tareas por estado (all, active, completed)
+  let filter = "all"; 
 
   $: taskCount = $items.length;
   
