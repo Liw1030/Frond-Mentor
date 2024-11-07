@@ -4,14 +4,18 @@
 
   // Inicializamos una lista vacía de tareas
   let items = writable([]);
-
+  
   // Variable para agregar una nueva tarea
   let newItem = '';
 
   //Agregar li
-  function addItem() {
+   // Función para agregar una nueva tarea
+   function addItem() {
     if (newItem.trim()) {
-      items.update(currentItems => [...currentItems, newItem]);
+      items.update(currentItems => [
+        ...currentItems,
+        { name: newItem, rating: null }
+      ]);
       newItem = '';
     }
   };
@@ -27,23 +31,47 @@
     items.update(currentItems => currentItems.filter((_, i) => i !== index));
   };
 
-  // Sección 2 - Calificación
-  let rating = null;
-  
-  function selectRating(value) {
-    rating = value;
-  };
-  
+  // Habilitar la edición de una tarea
+  function editItem(index) {
+    items.update(currentItems => {
+      const updatedItems = [...currentItems];
+      updatedItems[index].isEditing = true;
+      return updatedItems;
+    });
+  }
+
+  // Guardar los cambios en la tarea
+  function saveItem(index, updatedName) {
+    items.update(currentItems => {
+      const updatedItems = [...currentItems];
+      updatedItems[index].name = updatedName;
+      updatedItems[index].isEditing = false;
+      return updatedItems;
+    });
+  }
+
+ // Función para seleccionar calificación
+ function selectRating(taskIndex, value) {
+    items.update(currentItems => {
+      const updatedItems = [...currentItems];
+      updatedItems[taskIndex].rating = value;
+      return updatedItems;
+    });
+  }
+
+  // Función para mostrar el mensaje de calificación
   function submit() {
-    if (rating !== null) {
-      console.log(`Calificación enviada: ${rating}`);
-    } else {
-      alert('Por favor selecciona una calificación.');
-    }
-  };
+    $items.forEach(item => {
+      if (item.rating !== null) {
+        alert(`La tarea "${item.name}" se ha calificado con un puntaje de: ${item.rating}`);
+      } 
+    });
+  }
 
 
-  //Cambiar clase del body al cambiar el estado del tema
+
+
+  //Cambiar tema 
   const isDarkMode = writable(false);
 
   $: {
@@ -62,8 +90,7 @@
 
   $: taskCount = $items.length;
   
-
-
+  
   </script>
   
   <header>
@@ -83,13 +110,34 @@
     <ul>
       {#each $items as item, index}
         <li>
+          <div class="ini">
           <input type="checkbox" name="todoItem" class="checkbox" id="item-{index}">
           <label for="item-{index}" class="checkmark"></label>
-          <p class="text">{item}</p>
+          {#if item.isEditing}
+          <input type="text" bind:value={item.name} on:blur={() => saveItem(index, item.name)} />
+          {:else}
+          <p class="text" on:click={() => editItem(index)}>{item.name}</p>
+          {/if}
           <button class="remove" on:click={() => deleteItem(index)}>Click</button>
+          </div>
+          <p class="calificacion" >Califica la tarea:</p>
+          <div class="rating">
+            {#each [1, 2, 3, 4, 5] as number}
+              <button 
+                class="number" 
+                class:selected={item.rating === number} 
+                on:click={() => selectRating(index, number)}
+              >
+                {number}
+              </button>
+            {/each}
+          </div>
+          
+          <button class="sub" on:click={submit}>Submit</button>
         </li>
       {/each}
     </ul>
+
 
     <div class="bottom-items">
       <!-- Contador de tareas filtradas -->
@@ -118,33 +166,6 @@
 
   </section>
   
-  <section class="content-2 ligth">
-    <div class="container">
-      <div class="head">
-        <img src="../src/public/images/icon-star.svg" class="icon" alt="Star Icon">
-        <h2>How did we do?</h2>
-      </div>
-  
-      <div class="text">
-        <p>Please let us know how we did with your support request.
-          All feedback is appreciated to help us improve our offering!</p>
-      </div>
-  
-      <div class="button">
-        {#each [1, 2, 3, 4, 5] as number}
-          <button 
-            class="number" 
-            class:selected={rating === number} 
-            on:click={() => selectRating(number)}
-          >
-            {number}
-          </button>
-        {/each}
-      </div>
-      
-      <button class="sub" on:click={submit}>Submit</button>
-    </div>
-</section>
   
   
   <footer>
@@ -197,15 +218,11 @@
       li{
         color: var(--font-color-lg);
       }
-    }
-
-    section.content-2{
-      background: var(--todo-bg-lg);
-      border: 1px solid var(--Light-Grey);
-      h2{
-        color: rgba(0, 0, 0, 0.884);
+      button.sub{
+        color: var(--Light-Grey);
       }
     }
+
 }
 
 
@@ -216,6 +233,7 @@ header{
         max-width: 545px;
         align-items: center;
         justify-content: space-between;
+        margin: 50px 0 0;
 
         h1{
           color: #FFF;
@@ -250,6 +268,7 @@ main {
       max-width: 545px;
       padding-block: 20px;
       border-radius: 5px;
+      margin: 30px 0 0;
 }
   
 input {
@@ -267,7 +286,7 @@ input {
       color: transparent;
       width: 20px;
       cursor: pointer;
-      margin: 0 15px 0 20px;
+      margin: 0 15px 0 38px;
 }
   
 .add_button:hover {
@@ -289,6 +308,7 @@ li {
       border-bottom: 1px solid var(--font-color);
       position: relative;
       justify-content: flex-start;
+      flex-direction: column;
 }
   
 li:hover .remove {
@@ -313,7 +333,8 @@ section.section1 {
       background: var(--todo-bg);
       width: 100%;
       max-width: 545px;
-      margin-top: 20px;
+      margin-top: 40px;
+      margin-bottom: 50px;
       border-radius: 5px;
 }
 
@@ -322,7 +343,7 @@ section.section1 {
   left: 0;
   height: 20px;
   width: 20px;
-  margin: 0 15px 0 20px;
+  margin: 10px 15px 0 20px;
   position: relative;
 }
 
@@ -365,40 +386,6 @@ button.number.selected {
       color: white;
 }
   
-.content-2 {
-      width: 100%;
-      max-width: 545px;
-      background: var(--todo-bg);
-      border-radius: 5px;
-      margin: 10% auto;
-      padding: 20px;
-      border-radius: 10px;
-}
-  
-.container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-}
-  
-.head {
-      padding: 0 15px;
-      display: flex;
-      align-items: flex-start;
-      width: 100%;
-      gap: 30px;
-      flex-direction: column;
-}
-  
-img.icon {
-      background: var(--Light-Grey);
-      padding: 12px;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      margin-top: 20px;
-}
   
 h2 {
       color: var(--font-color);
@@ -411,18 +398,13 @@ p {
       text-align: center;
 }
   
-.button {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-}
   
 button.number {
       background: var(--Light-Grey);
       border: none;
       border-radius: 50%;
-      width: 45px;
-      height: 45px;
+      width: 30px;
+      height: 30px;
       cursor: pointer;
       font-size: 16px;
       margin: 0 20px;
@@ -430,33 +412,37 @@ button.number {
   
 button.number:hover {
       filter: brightness(80%);
+      width: 35px;
+      height: 35px;
 }
   
 button.sub {
-      width: 100%;
-      background-color: var(--Orange);
-      border: none;
+      width: 40%;
+      background-color: transparent;
       height: 40px;
       border-radius: 5px;
       color: white;
       font-weight: bold;
       cursor: pointer;
       margin: 20px 0;
+      border: 1px solid var(--font-color);
 }
   
 button.sub:hover {
-      filter: brightness(80%);
+      background-color: rgba(85, 85, 85, 0.548);
 }
   
 footer {
-      background: rgba(0, 0, 0, 0.5);
-      font-size: 6px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 10px 0;
-      height: 50px;
-      width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 7px;
+    padding: 10px;
+    width: 100%;
+    height: 50px;
+    margin-top: auto; 
 }
 
 div.bottom-items{
@@ -465,5 +451,17 @@ div.bottom-items{
     justify-content: space-around;
 }
 
+div.ini{
+    display: flex;
+    width: 500px;
+    margin: 10px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+
+p.calificacion{
+  margin-bottom: 10px;
+}
 </style>
   
